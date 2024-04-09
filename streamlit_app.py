@@ -1,22 +1,23 @@
 import streamlit as st
 from selenium import webdriver
 from selenium.webdriver.common.by import By
-from selenium.webdriver.firefox.options import Options  # Import FirefoxOptions
+from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
 from random import randint
 import time
 
-# Initialize the Firefox driver with appropriate options for visible mode
+# Initialize the Chrome driver with appropriate options for visible mode
 def init_driver():
-    firefox_options = Options()
-    firefox_options.add_argument('--no-sandbox')
-    firefox_options.add_argument('--disable-dev-shm-usage')
-    firefox_options.add_argument('--disable-gpu')
-    firefox_options.add_argument('--disable-extensions')
-    firefox_options.add_argument("--start-maximized")  # Use --start-maximized for Firefox
-    driver = webdriver.Firefox(options=firefox_options)
+    chrome_options = Options()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-extensions')
+    chrome_options.add_argument("start-maximized")
+    chrome_options.add_argument("disable-infobars")
+    driver = webdriver.Chrome(options=chrome_options)
     return driver
 
 # Function to log in to LinkedIn using Selenium
