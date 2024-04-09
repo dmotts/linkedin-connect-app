@@ -1,36 +1,36 @@
 import streamlit as st
-    from selenium import webdriver
-    from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
-    from selenium.webdriver.common.by import By
-    from selenium.webdriver.chrome.options import Options
-    from selenium.webdriver.support.ui import WebDriverWait
-    from selenium.webdriver.support import expected_conditions as EC
-    from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
-    from random import randint
-    import time
+from selenium import webdriver
+from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
+from selenium.webdriver.common.by import By
+from selenium.webdriver.chrome.options import Options
+from selenium.webdriver.support.ui import WebDriverWait
+from selenium.webdriver.support import expected_conditions as EC
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from random import randint
+import time
 
-    # Initialize the Remote WebDriver with appropriate options for visible mode
-    def init_driver():
-        chrome_options = Options()
-        chrome_options.add_argument('--no-sandbox')
-        chrome_options.add_argument('--disable-dev-shm-usage')
-        chrome_options.add_argument('--disable-gpu')
-        chrome_options.add_argument('--disable-extensions')
-        chrome_options.add_argument("start-maximized")
-        chrome_options.add_argument("disable-infobars")
+# Initialize the Remote WebDriver with appropriate options for visible mode
+def init_driver():
+    chrome_options = Options()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-extensions')
+    chrome_options.add_argument("start-maximized")
+    chrome_options.add_argument("disable-infobars")
 
-        # Desired capabilities for Chrome
-        desired_caps = chrome_options.to_capabilities()
+    # Desired capabilities for Chrome
+    #desired_caps = chrome_options.to_capabilities()
 
-        # Specify the address of Selenium Grid or standalone server
-        selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
+    # Specify the address of Selenium Grid or standalone server
+    selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
 
-        # Initialize the Remote WebDriver
-        driver = webdriver.Remote(
-            command_executor=selenium_grid_url,
-            desired_capabilities=desired_caps
-        )
-        return driver
+    # Initialize the Remote WebDriver
+    driver = webdriver.Remote(
+        command_executor=selenium_grid_url,
+        options=chrome_options
+    )
+    return driver
 
 # Function to log in to LinkedIn using Selenium
 def login_to_linkedin(driver, username, password):
