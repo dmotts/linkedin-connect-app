@@ -13,13 +13,14 @@ def init_driver():
     chrome_options = Options()
     chrome_options.add_argument('--no-sandbox')
 
-    #chrome_options.add_argument('--headless')
+    chrome_options.add_argument('--headless')
     chrome_options.add_argument('--disable-dev-shm-usage')
     chrome_options.add_argument('--disable-gpu')
     chrome_options.add_argument('--disable-extensions')
     chrome_options.add_argument("start-maximized")
     chrome_options.add_argument("disable-infobars")
     driver = webdriver.Chrome(options=chrome_options)
+    print(f"Driver initialized with options: {chrome_options.arguments}")
     return driver
 
 # Function to log in to LinkedIn using Selenium
