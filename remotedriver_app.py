@@ -9,9 +9,25 @@ from random import randint
 import time
 import logging
 import numpy as np
+import os
+from datetime import datetime
 
-# Set up logging configuration
-logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+# Create a directory for logs if it doesn't exist
+log_directory = "logs"
+if not os.path.exists(log_directory):
+    os.makedirs(log_directory)
+
+# Generate a filename with the current date and time
+timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
+filename = f"{log_directory}/log_{timestamp}.log"
+
+# Set up logging configuration to write to a file
+logging.basicConfig(
+    filename=filename,
+    level=logging.INFO,
+    format='%(asctime)s - %(levelname)s - %(message)s',
+    filemode='w'  # 'w' for write mode
+)
 
 def human_like_delay():
     mean_time = 10
@@ -20,7 +36,6 @@ def human_like_delay():
     logging.debug(f"Sleeping for {sleep_time:.2f} seconds to mimic human interaction.")
     time.sleep(sleep_time)
 
-# Initialize the Remote WebDriver with appropriate options for visible mode
 def init_driver():
     logging.info("Initializing the Selenium driver.")
     chrome_options = Options()
@@ -53,7 +68,8 @@ def login_to_linkedin(driver, username, password):
         except TimeoutException:
             logging.warning(f"Login attempt {attempts + 1} failed, retrying...")
             attempts += 1
-    logging.error("Failed to sign in after maximum attempts.")
+        except Exception as e:
+            logging.error(f"Failed to sign in after maximum attempts. Error: {e}")
 
 def send_connection_requests(driver, keywords, max_connect):
     logging.info("Starting the connection request process.")
@@ -95,39 +111,39 @@ def send_connection_requests(driver, keywords, max_connect):
                     return
 
                 human_like_delay()
-            page_number += 1
-        except TimeoutException as e:
-            logging.error(f"A timeout occurred while waiting for the page or elements. Error: {e}")
-        except NoSuchElementException as e:
-            logging.error(f"An element could not be found on the page. Error: {e}")
-        except Exception as e:
-            logging.error(f"An unexpected error occurred: {e}. Current URL: {driver.current_url}, Page Number: {page_number}")
+                page_number += 1
+                except TimeoutException as e:
+                logging.error(f"A timeout occurred while waiting for the page or elements. Error: {e}")
+                except NoSuchElementException as e:
+                logging.error(f"An element could not be found on the page. Error: {e}")
+                except Exception as e:
+                logging.error(f"An unexpected error occurred: {e}. Current URL: {driver.current_url}, Page Number: {page_number}")
 
-# Streamlit application setup and logic
-def main():
-    st.set_page_config(page_title="LinkedIn Automation Tool", layout="wide")
-    st.sidebar.header('User Settings')
-    username = st.sidebar.text_input("LinkedIn Username")
-    password = st.sidebar.text_input("LinkedIn Password", type="password")
+                # Streamlit application setup and logic
+                def main():
+                st.set_page_config(page_title="LinkedIn Automation Tool", layout="wide")
+                st.sidebar.header('User Settings')
+                username = st.sidebar.text_input("LinkedIn Username")
+                password = st.sidebar.text_input("LinkedIn Password", type="password")
 
-    st.title('LinkedIn Automation Tool')
-    st.write('Streamline your LinkedIn interactions with AI-driven automation.')
+                st.title('LinkedIn Automation Tool')
+                st.write('Streamline your LinkedIn interactions with AI-driven automation.')
 
-    keywords_input = st.text_input('Enter keywords separated by commas')
-    max_connections = st.number_input('Number of connection requests', min_value=1, max_value=100, value=10)
-    send_requests = st.button('Send Connection Requests')
+                keywords_input = st.text_input('Enter keywords separated by commas')
+                max_connections = st.number_input('Number of connection requests', min_value=1, max_value=100, value=10)
+                send_requests = st.button('Send Connection Requests')
 
-    if send_requests and username and password and keywords_input:
-        with st.spinner("Processing..."):
-            driver = init_driver()
-            login_to_linkedin(driver, username, password)
-            
-            keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
-            send_connection_requests(driver, keywords_list, max_connections)
-            driver.quit()
-            st.success("Connection requests sent successfully!")
-    elif send_requests:
-        st.error("Please fill out all fields.")
+                if send_requests and username and password and keywords_input:
+                with st.spinner("Processing..."):
+                driver = init_driver()
+                login_to_linkedin(driver, username, password)
 
-if __name__ == "__main__":
-    main()
+                keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
+                send_connection_requests(driver, keywords_list, max_connections)
+                driver.quit()
+                st.success("Connection requests sent successfully!")
+                elif send_requests:
+                st.error("Please fill out all fields.")
+
+                if __name__ == "__main__":
+                main()
