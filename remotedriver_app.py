@@ -11,17 +11,19 @@ import logging
 from datetime import datetime
 import os
 
-# Directory for logs
+# Ensure directories for logs and screenshots
 log_directory = "logs"
+screenshots_directory = "screenshots"
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
+if not os.path.exists(screenshots_directory):
+    os.makedirs(screenshots_directory)
 
 # Logging configuration
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 filename = f"{log_directory}/log_{timestamp}.log"
 logging.basicConfig(filename=filename, level=logging.INFO, format='%(asctime)s - [%(levelname)s] - %(message)s', filemode='w')
-
-logger = logging.getLogger(__name__)  # Get the logger for the current script/module
+logger = logging.getLogger(__name__)
 
 def human_like_delay():
     mean_time = 10
@@ -48,7 +50,8 @@ def login_to_linkedin(driver, username, password):
     logger.info(f"Logging in to LinkedIn as {username}")
     url_to_sign_in_page = 'https://www.linkedin.com/login'
 
-    driver.get_screenshot_as_file('login_page.png')
+    time.sleep(15)
+    driver.get_screenshot_as_file(f'{screenshots_directory}/login_page.png')
     driver.get(url_to_sign_in_page)
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
 
@@ -57,19 +60,23 @@ def login_to_linkedin(driver, username, password):
     username_input.send_keys(username)
     password_input.send_keys(password)
 
+    time.sleep(5)
+
+    driver.get_screenshot_as_file(f'{screenshots_directory}/login_page_with_creds.png')
     try:
         submit_button = WebDriverWait(driver, 10).until(
             EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
         submit_button.click()
     except TimeoutException:
         logger.error("Timeout while trying to log in.")
-    except ElementClickInterceptedException:
+    except NoSuchElementException:
         logger.error("Submit button was not clickable.")
 
     WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
     logger.info("Successfully signed in!")
     time.sleep(15)
-    driver.get_screenshot_as_file('after_successful_login.png')
+    driver.get_screenshot_as_file(f'{screenshots_directory}/after_successful_login.png')
+
 
 def send_connection_requests(driver, keywords, max_connect):
     i, page_number = 0, 1
