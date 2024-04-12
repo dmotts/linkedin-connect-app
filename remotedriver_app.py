@@ -1,16 +1,28 @@
 import streamlit as st
 from selenium import webdriver
-from selenium.webdriver.common.desired_capabilities import DesiredCapabilities
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
 from selenium.webdriver.support.ui import WebDriverWait
 from selenium.webdriver.support import expected_conditions as EC
-from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException
+from selenium.common.exceptions import TimeoutException, ElementClickInterceptedException, NoSuchElementException
 from random import randint
 import time
+import logging
+import numpy as np
+
+# Set up logging configuration
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
+
+def human_like_delay():
+    mean_time = 10
+    std_dev = 3
+    sleep_time = abs(np.random.normal(mean_time, std_dev))
+    logging.debug(f"Sleeping for {sleep_time:.2f} seconds to mimic human interaction.")
+    time.sleep(sleep_time)
 
 # Initialize the Remote WebDriver with appropriate options for visible mode
 def init_driver():
+    logging.info("Initializing the Selenium driver.")
     chrome_options = Options()
     chrome_options.add_argument('--no-sandbox')
     chrome_options.add_argument('--disable-dev-shm-usage')
@@ -19,46 +31,32 @@ def init_driver():
     chrome_options.add_argument("start-maximized")
     chrome_options.add_argument("disable-infobars")
 
-    # Desired capabilities for Chrome
-    #desired_caps = chrome_options.to_capabilities()
-
-    # Specify the address of Selenium Grid or standalone server
     selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
-
-    # Initialize the Remote WebDriver
-    driver = webdriver.Remote(
-        command_executor=selenium_grid_url,
-        options=chrome_options
-    )
+    driver = webdriver.Remote(command_executor=selenium_grid_url, options=chrome_options)
+    logging.info("Driver initialized successfully.")
     return driver
 
-# Function to log in to LinkedIn using Selenium
 def login_to_linkedin(driver, username, password):
-    print('\nSigning in... (Takes about 10 seconds)')
-    url_to_sign_in_page = 'https://www.linkedin.com/login'
-    driver.get(url_to_sign_in_page)
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
+    attempts = 0
+    max_attempts = 3
+    while attempts < max_attempts:
+        try:
+            driver.get('https://www.linkedin.com/login')
+            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
+            driver.find_element(By.NAME, 'session_key').send_keys(username)
+            driver.find_element(By.NAME, 'session_password').send_keys(password)
+            submit_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
+            submit_button.click()
+            WebDriverWait(driver, 10).until(lambda d: d.current_url != 'https://www.linkedin.com/login')
+            logging.info("Successfully signed in.")
+            return
+        except TimeoutException:
+            logging.warning(f"Login attempt {attempts + 1} failed, retrying...")
+            attempts += 1
+    logging.error("Failed to sign in after maximum attempts.")
 
-    username_input = driver.find_element(By.NAME, 'session_key')
-    password_input = driver.find_element(By.NAME, 'session_password')
-    username_input.send_keys(username)
-    password_input.send_keys(password)
-
-    try:
-        submit_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-        submit_button.click()
-    except TimeoutException:
-        print("Timeout while trying to log in.")
-    except ElementClickInterceptedException:
-        print("Submit button was not clickable.")
-
-    WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
-    print('\nSuccessfully signed in!')
-
-# Function to send connection requests on LinkedIn
 def send_connection_requests(driver, keywords, max_connect):
-    print("\nBeginning connection request process...\nThere is a delay between requests intentionally to bypass bot detections.")
+    logging.info("Starting the connection request process.")
     i = 0
     page_number = 1
 
@@ -73,7 +71,7 @@ def send_connection_requests(driver, keywords, max_connect):
             connect_buttons = [btn for btn in all_buttons if btn.text == "Connect"]
 
             if not connect_buttons:
-                print(f"No 'Connect' buttons found on page {page_number}. Moving to next page.")
+                logging.warning(f"No 'Connect' buttons found on page {page_number}. Moving to next page.")
                 page_number += 1
                 continue
 
@@ -82,7 +80,7 @@ def send_connection_requests(driver, keywords, max_connect):
                 btn.click()
                 name = WebDriverWait(driver, 10).until(
                     EC.presence_of_element_located((By.XPATH, "//div[@role='dialog']//strong")))
-                print(f"Sending connection request to {name.text}")
+                logging.info(f"Sending connection request to {name.text}")
 
                 send_button = WebDriverWait(driver, 10).until(
                     EC.element_to_be_clickable((By.XPATH, "//button[@aria-label='Send now']")))
@@ -93,17 +91,17 @@ def send_connection_requests(driver, keywords, max_connect):
 
                 i += 1
                 if i >= max_connect:
-                    print(f"Reached the maximum number of connection requests: {i}")
+                    logging.info(f"Reached the maximum number of connection requests: {i}")
                     return
 
-                time.sleep(randint(4, 15))
+                human_like_delay()
             page_number += 1
         except TimeoutException as e:
-            print("A timeout occurred while waiting for the page or elements.")
+            logging.error(f"A timeout occurred while waiting for the page or elements. Error: {e}")
         except NoSuchElementException as e:
-            print("An element could not be found on the page.")
+            logging.error(f"An element could not be found on the page. Error: {e}")
         except Exception as e:
-            print(f"An unexpected error occurred: {e}")
+            logging.error(f"An unexpected error occurred: {e}. Current URL: {driver.current_url}, Page Number: {page_number}")
 
 # Streamlit application setup and logic
 def main():
@@ -123,6 +121,7 @@ def main():
         with st.spinner("Processing..."):
             driver = init_driver()
             login_to_linkedin(driver, username, password)
+            
             keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
             send_connection_requests(driver, keywords_list, max_connections)
             driver.quit()
