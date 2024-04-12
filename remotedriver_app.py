@@ -19,14 +19,16 @@ if not os.path.exists(log_directory):
 # Logging configuration
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 filename = f"{log_directory}/log_{timestamp}.log"
-logging.basicConfig(filename=filename, level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
+logging.basicConfig(filename=filename, level=logging.DEBUG, format='%(asctime)s - %(levelname)s - %(message)s', filemode='w')
+
+logger = logging.getLogger(__name__)  # Get the logger for the current script/module
 
 # Delays
 def human_like_delay():
     mean_time = 10
     std_dev = 3
     sleep_time = abs(np.random.normal(mean_time, std_dev))
-    logging.debug(f"Sleeping for {sleep_time:.2f} seconds.")
+    logger.debug(f"Sleeping for {sleep_time:.2f} seconds.")  # Use logger to log
     time.sleep(sleep_time)
 
 # Selenium driver initialization
@@ -42,6 +44,7 @@ def init_driver():
     # Replace with your Selenium Grid URL
     selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
     driver = webdriver.Remote(command_executor=selenium_grid_url, options=chrome_options)
+    logger.debug("WebDriver initialized.")  # Use logger to log
     return driver
 
 # LinkedIn login
@@ -57,10 +60,11 @@ def login_to_linkedin(driver, username, password):
             submit_button.click()
             WebDriverWait(driver, 10).until(lambda d: d.current_url != 'https://www.linkedin.com/login')
             return True
-        except TimeoutException:
+        except TimeoutException as e:
+            logger.error(f"Timeout during login: {e}")
             attempts += 1
         except Exception as e:
-            logging.error(f"Login error: {e}")
+            logger.error(f"Login error: {e}")
             raise
 
 # Sending connection requests
@@ -92,14 +96,15 @@ def send_connection_requests(driver, keywords, max_connect):
                 human_like_delay()
             page_number += 1
         except TimeoutException as e:
-            logging.error(f"Timeout error: {e}")
+            logger.error(f"Timeout error: {e}")
         except NoSuchElementException as e:
-            logging.error(f"Element not found error: {e}")
+            logger.error(f"Element not found error: {e}")
         except Exception as e:
-            logging.error(f"Unexpected error: {e}")
+            logger.error(f"Unexpected error: {e}")
             break
 
 # Streamlit application main function
+
 def main():
     st.set_page_config(page_title="LinkedIn Automation Tool", layout="wide")
     st.sidebar.header('User Settings')
@@ -116,15 +121,18 @@ def main():
     if send_requests and username and password and keywords_input:
         with st.spinner("Processing..."):
             driver = init_driver()
-            if login_to_linkedin(driver, username, password):
-                keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
-                send_connection_requests(driver, keywords_list, max_connections)
+            try:
+                if login_to_linkedin(driver, username, password):
+                    keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
+                    send_connection_requests(driver, keywords_list, max_connections)
+                    st.success("Connection requests sent successfully!")
+                else:
+                    st.error("Failed to log in to LinkedIn. Please check your credentials.")
+            finally:
                 driver.quit()
-                st.success("Connection requests sent successfully!")
-            else:
-                st.error("Failed to log in to LinkedIn. Please check your credentials.")
     elif send_requests:
         st.error("Please fill out all fields.")
 
 if __name__ == "__main__":
     main()
+
