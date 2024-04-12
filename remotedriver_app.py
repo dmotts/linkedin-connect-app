@@ -44,24 +44,28 @@ def init_driver():
     return driver
 
 def login_to_linkedin(driver, username, password):
-    attempts, max_attempts = 0, 3
-    while attempts < max_attempts:
-        try:
-            driver.get('https://www.linkedin.com/login')
-            WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
-            driver.find_element(By.NAME, 'session_key').send_keys(username)
-            driver.find_element(By.NAME, 'session_password').send_keys(password)
-            submit_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-            submit_button.click()
-            WebDriverWait(driver, 10).until(lambda d: d.current_url != 'https://www.linkedin.com/login')
-            logger.info("Successfully logged into LinkedIn.")
-            return True
-        except TimeoutException as e:
-            logger.warning(f"Timeout during login attempt {attempts + 1}: {e}")
-            attempts += 1
-        except Exception as e:
-            logger.error(f"Failed to login: {e}")
-            raise
+    logger = logging.getLogger(__name__)
+    logger.info(f"Logging in to LinkedIn as {username}")
+    url_to_sign_in_page = 'https://www.linkedin.com/login'
+    driver.get(url_to_sign_in_page)
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
+
+    username_input = driver.find_element(By.NAME, 'session_key')
+    password_input = driver.find_element(By.NAME, 'session_password')
+    username_input.send_keys(username)
+    password_input.send_keys(password)
+
+    try:
+        submit_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
+        submit_button.click()
+    except TimeoutException:
+        logger.error("Timeout while trying to log in.")
+    except ElementClickInterceptedException:
+        logger.error("Submit button was not clickable.")
+
+    WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
+    logger.info("Successfully signed in!")
 
 def send_connection_requests(driver, keywords, max_connect):
     i, page_number = 0, 1
