@@ -1,5 +1,5 @@
 modules = ["python-3.10:v18-20230807-322e88b"]
-run = "streamlit run streamlit_app.py"
+run = "streamlit run remotedriver_app.py"
 
 [nix]
 channel = "stable-23_05"
@@ -11,7 +11,7 @@ language = "python3"
 requiredFiles = [".replit", "replit.nix"]
 
 [deployment]
-run = ["sh", "    -c", "streamlit run streamlit_app.py"]
+run = ["sh", "    -c", "streamlit run remotedriver_app.py"]
 deploymentTarget = "cloudrun"
 
 [[ports]]

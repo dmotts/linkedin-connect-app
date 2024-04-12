@@ -16,6 +16,7 @@ config = "^0.5.1"
 html2text = "^2024.2.26"
 openai = "^1.14.3"
 streamlit = "^1.32.2"
+numpy = "^1.26.4"
 
 
 [build-system]
