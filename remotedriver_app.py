@@ -47,6 +47,8 @@ def login_to_linkedin(driver, username, password):
     logger = logging.getLogger(__name__)
     logger.info(f"Logging in to LinkedIn as {username}")
     url_to_sign_in_page = 'https://www.linkedin.com/login'
+
+    driver.get_screenshot_as_file('login_page.png')
     driver.get(url_to_sign_in_page)
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
 
@@ -66,6 +68,8 @@ def login_to_linkedin(driver, username, password):
 
     WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
     logger.info("Successfully signed in!")
+    time.sleep(15)
+    driver.get_screenshot_as_file('after_successful_login.png')
 
 def send_connection_requests(driver, keywords, max_connect):
     i, page_number = 0, 1
