@@ -40,7 +40,7 @@ def init_driver():
     chrome_options.add_argument("disable-infobars")
 
     # Replace with your Selenium Grid URL
-    selenium_grid_url = "http://your.selenium.grid.url:4444/wd/hub"
+    selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
     driver = webdriver.Remote(command_executor=selenium_grid_url, options=chrome_options)
     return driver
 
