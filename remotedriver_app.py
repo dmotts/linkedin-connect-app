@@ -10,6 +10,10 @@ import time
 import logging
 from datetime import datetime
 import os
+from dotenv import load_dotenv
+
+# Load environment variables from .env file
+load_dotenv()
 
 # Ensure directories for logs and screenshots
 log_directory = "logs"
@@ -77,6 +81,17 @@ def login_to_linkedin(driver, username, password):
     time.sleep(15)
     driver.get_screenshot_as_file(f'{screenshots_directory}/after_successful_login.png')
 
+def bypass_captcha(driver):
+    # Find the button by its text and click it
+    logger.info("Bypassing captcha...")
+    driver.get_screenshot_as_file(f'{screenshots_directory}/captcha_page.png')
+    try:
+        verify_button = driver.find_element(By.XPATH, "//button[text()='Verify']")
+        verify_button.click()
+        logger.info("Button clicked successfully!")
+    except Exception as e:
+        logger.error(f"Error clicking the button: {e}")
+
 
 def send_connection_requests(driver, keywords, max_connect):
     i, page_number = 0, 1
@@ -115,10 +130,13 @@ def send_connection_requests(driver, keywords, max_connect):
             break
 
 def main():
+    # Attempt to fetch environment variables, fallback to empty strings if not found
+    username_env = os.getenv("LINKEDIN_USERNAME", "")
+    password_env = os.getenv("LINKEDIN_PASSWORD", "")
     st.set_page_config(page_title="LinkedIn Automation Tool", layout="wide")
     st.sidebar.header('User Settings')
-    username = st.sidebar.text_input("LinkedIn Username")
-    password = st.sidebar.text_input("LinkedIn Password", type="password")
+    username = st.sidebar.text_input("LinkedIn Username", value=username_env)
+    password = st.sidebar.text_input("LinkedIn Password", type="password", value=password_env)
 
     st.title('LinkedIn Automation Tool')
     st.write('Automate your LinkedIn interactions.')
@@ -132,7 +150,10 @@ def main():
             driver = init_driver()
             try:
                 if login_to_linkedin(driver, username, password):
+                    bypass_captcha(driver)
                     keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
+                    
+                    
                     send_connection_requests(driver, keywords_list, max_connections)
                     st.success("Connection requests sent successfully!")
                 else:
