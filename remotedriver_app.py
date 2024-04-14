@@ -73,13 +73,16 @@ def login_to_linkedin(driver, username, password):
         submit_button.click()
     except TimeoutException:
         logger.error("Timeout while trying to log in.")
+        return False
     except NoSuchElementException:
         logger.error("Submit button was not clickable.")
+        return False
 
     WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
     logger.info("Successfully signed in!")
     time.sleep(15)
     driver.get_screenshot_as_file(f'{screenshots_directory}/after_successful_login.png')
+    return True
 
 def bypass_captcha(driver):
     # Find the button by its text and click it
@@ -89,8 +92,10 @@ def bypass_captcha(driver):
         verify_button = driver.find_element(By.XPATH, "//button[text()='Verify']")
         verify_button.click()
         logger.info("Button clicked successfully!")
+        return True
     except Exception as e:
         logger.error(f"Error clicking the button: {e}")
+
 
 
 def send_connection_requests(driver, keywords, max_connect):
@@ -150,10 +155,11 @@ def main():
             driver = init_driver()
             try:
                 if login_to_linkedin(driver, username, password):
-                    bypass_captcha(driver)
+
                     keywords_list = [keyword.strip() for keyword in keywords_input.split(',')]
-                    
-                    
+
+                    bypass_captcha(driver)
+                                    
                     send_connection_requests(driver, keywords_list, max_connections)
                     st.success("Connection requests sent successfully!")
                 else:
