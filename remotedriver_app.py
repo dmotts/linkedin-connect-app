@@ -95,36 +95,6 @@ def get_screenshot(driver, file_path):
         file.write(html_content)
     logger.info(f"Screenshot and HTML source saved for {file_path}")
 
-    def login_to_linkedin(driver, username, password): logger = logging.getLogger(name) logger.info(f"Logging in to LinkedIn as {username}") url_to_sign_in_page = 'https://www.linkedin.com/login'time.sleep(15)
-    get_screenshot(driver, f'{screenshots_directory}/login_page.png')
-    driver.get(url_to_sign_in_page)
-    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
-
-    username_input = driver.find_element(By.NAME, 'session_key')
-    password_input = driver.find_element(By.NAME, 'session_password')
-    username_input.send_keys(username)
-    password_input.send_keys(password)
-
-    time.sleep(5)
-
-    get_screenshot(driver, f'{screenshots_directory}/login_page_with_creds.png')
-    try:
-        submit_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
-        submit_button.click()
-    except TimeoutException:
-        logger.error("Timeout while trying to log in.")
-        return False
-    except NoSuchElementException:
-        logger.error("Submit button was not clickable.")
-        return False
-
-    WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
-    logger.info("Successfully signed in!")
-    time.sleep(15)
-    get_screenshot(driver, f'{screenshots_directory}/after_successful_login.png')
-    return True
-
 def bypass_captcha(driver):
     # Find the button by its text and click it
     logger.info("Bypassing captcha...")
