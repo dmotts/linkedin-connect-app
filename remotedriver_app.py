@@ -15,61 +15,36 @@ from dotenv import load_dotenv
 # Load environment variables from .env file
 load_dotenv()
 
-# Ensure directories for logs and screenshots
+# Ensure directories for logs, screenshots, and HTML pages
 log_directory = "logs"
 screenshots_directory = "screenshots"
+pages_directory = "pages"
 if not os.path.exists(log_directory):
     os.makedirs(log_directory)
 if not os.path.exists(screenshots_directory):
     os.makedirs(screenshots_directory)
+if not os.path.exists(pages_directory):
+    os.makedirs(pages_directory)
 
 # Logging configuration
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 filename = f"{log_directory}/log_{timestamp}.log"
 logging.basicConfig(filename=filename, level=logging.INFO, format='%(asctime)s - [%(levelname)s] - %(message)s', filemode='w')
-logger = logging.getLogger(__name__)
+logger = logging.getLogger(__name__)logging.getLogger(__name__)
 
-def human_like_delay():
-    mean_time = 10
-    std_dev = 3
-    sleep_time = abs(np.random.normal(mean_time, std_dev))
-    logger.info(f"Delay introduced for {sleep_time:.2f} seconds to mimic human behavior.")
-    time.sleep(sleep_time)
 
-def init_driver():
-    chrome_options = Options()
-    chrome_options.add_argument('--no-sandbox')
-    chrome_options.add_argument('--disable-dev-shm-usage')
-    chrome_options.add_argument('--disable-gpu')
-    chrome_options.add_argument('--disable-extensions')
-    chrome_options.add_argument("start-maximized")
-    chrome_options.add_argument("disable-infobars")
-    selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
-    driver = webdriver.Remote(command_executor=selenium_grid_url, options=chrome_options)
-    logger.info("WebDriver initialized.")
-    return driver
 
 def login_to_linkedin(driver, username, password):
-    logger = logging.getLogger(__name__)
-    logger.info(f"Logging in to LinkedIn as {username}")
     url_to_sign_in_page = 'https://www.linkedin.com/login'
-
-    time.sleep(15)
-    driver.get_screenshot_as_file(f'{screenshots_directory}/login_page.png')
     driver.get(url_to_sign_in_page)
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
-
     username_input = driver.find_element(By.NAME, 'session_key')
     password_input = driver.find_element(By.NAME, 'session_password')
     username_input.send_keys(username)
     password_input.send_keys(password)
-
-    time.sleep(5)
-
-    driver.get_screenshot_as_file(f'{screenshots_directory}/login_page_with_creds.png')
+    get_screenshot_and_html(driver, f'{screenshots_directory}/login_page.png')  # Updated to use new function
     try:
-        submit_button = WebDriverWait(driver, 10).until(
-            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
+        submit_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
         submit_button.click()
     except TimeoutException:
         logger.error("Timeout while trying to log in.")
@@ -77,11 +52,9 @@ def login_to_linkedin(driver, username, password):
     except NoSuchElementException:
         logger.error("Submit button was not clickable.")
         return False
-
     WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
     logger.info("Successfully signed in!")
-    time.sleep(15)
-    driver.get_screenshot_as_file(f'{screenshots_directory}/after_successful_login.png')
+    get_screenshot_and_html(driver, f'{screenshots_directory}/after_successful_login.png')  # Updated to use new function
     return True
 
 def bypass_captcha(driver):

@@ -164,3 +164,7 @@ screenshots/
 
 # Logs
 logs/
+
+# Webpages source code
+
+pages/
