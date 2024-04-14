@@ -52,25 +52,27 @@ def init_driver():
     logger.info("WebDriver initialized.")
     return driver
 
-def get_screenshot_and_html(driver, file_path):
-    driver.get_screenshot_as_file(file_path)
-    html_content = driver.page_source
-    html_file_path = file_path.replace(screenshots_directory, pages_directory).replace('.png', '.html')
-    with open(html_file_path, 'w', encoding='utf-8') as file:
-        file.write(html_content)
-    logger.info(f"Screenshot and HTML source saved for {file_path}")
-
 def login_to_linkedin(driver, username, password):
+    logger = logging.getLogger(__name__)
+    logger.info(f"Logging in to LinkedIn as {username}")
     url_to_sign_in_page = 'https://www.linkedin.com/login'
+
+    time.sleep(15)
+    get_screenshot(driver, f'{screenshots_directory}/login_page.png')  # Updated function call
     driver.get(url_to_sign_in_page)
     WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
+
     username_input = driver.find_element(By.NAME, 'session_key')
     password_input = driver.find_element(By.NAME, 'session_password')
     username_input.send_keys(username)
     password_input.send_keys(password)
-    get_screenshot_and_html(driver, f'{screenshots_directory}/login_page.png')  # Updated to use new function
+
+    time.sleep(5)
+
+    get_screenshot(driver, f'{screenshots_directory}/login_page_with_creds.png')  # Updated function call
     try:
-        submit_button = WebDriverWait(driver, 10).until(EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
+        submit_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
         submit_button.click()
     except TimeoutException:
         logger.error("Timeout while trying to log in.")
@@ -78,9 +80,49 @@ def login_to_linkedin(driver, username, password):
     except NoSuchElementException:
         logger.error("Submit button was not clickable.")
         return False
+
     WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
     logger.info("Successfully signed in!")
-    get_screenshot_and_html(driver, f'{screenshots_directory}/after_successful_login.png')  # Updated to use new function
+    time.sleep(15)
+    get_screenshot(driver, f'{screenshots_directory}/after_successful_login.png')  # Updated function call
+    return True
+
+def get_screenshot(driver, file_path):
+    driver.get_screenshot_as_file(file_path)
+    html_content = driver.page_source
+    html_file_path = file_path.replace(screenshots_directory, pages_directory).replace('.png', '.html')
+    with open(html_file_path, 'w', encoding='utf-8') as file:
+        file.write(html_content)
+    logger.info(f"Screenshot and HTML source saved for {file_path}")
+
+    def login_to_linkedin(driver, username, password): logger = logging.getLogger(name) logger.info(f"Logging in to LinkedIn as {username}") url_to_sign_in_page = 'https://www.linkedin.com/login'time.sleep(15)
+    get_screenshot(driver, f'{screenshots_directory}/login_page.png')
+    driver.get(url_to_sign_in_page)
+    WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.NAME, 'session_key')))
+
+    username_input = driver.find_element(By.NAME, 'session_key')
+    password_input = driver.find_element(By.NAME, 'session_password')
+    username_input.send_keys(username)
+    password_input.send_keys(password)
+
+    time.sleep(5)
+
+    get_screenshot(driver, f'{screenshots_directory}/login_page_with_creds.png')
+    try:
+        submit_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.XPATH, "//button[@type='submit']")))
+        submit_button.click()
+    except TimeoutException:
+        logger.error("Timeout while trying to log in.")
+        return False
+    except NoSuchElementException:
+        logger.error("Submit button was not clickable.")
+        return False
+
+    WebDriverWait(driver, 10).until(lambda d: d.current_url != url_to_sign_in_page)
+    logger.info("Successfully signed in!")
+    time.sleep(15)
+    get_screenshot(driver, f'{screenshots_directory}/after_successful_login.png')
     return True
 
 def bypass_captcha(driver):
