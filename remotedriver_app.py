@@ -30,9 +30,35 @@ if not os.path.exists(pages_directory):
 timestamp = datetime.now().strftime("%Y-%m-%d_%H-%M-%S")
 filename = f"{log_directory}/log_{timestamp}.log"
 logging.basicConfig(filename=filename, level=logging.INFO, format='%(asctime)s - [%(levelname)s] - %(message)s', filemode='w')
-logger = logging.getLogger(__name__)logging.getLogger(__name__)
+logger = logging.getLogger(__name__)
 
+def human_like_delay():
+    mean_time = 10
+    std_dev = 3
+    sleep_time = abs(np.random.normal(mean_time, std_dev))
+    logger.info(f"Delay introduced for {sleep_time:.2f} seconds to mimic human behavior.")
+    time.sleep(sleep_time)
 
+def init_driver():
+    chrome_options = Options()
+    chrome_options.add_argument('--no-sandbox')
+    chrome_options.add_argument('--disable-dev-shm-usage')
+    chrome_options.add_argument('--disable-gpu')
+    chrome_options.add_argument('--disable-extensions')
+    chrome_options.add_argument("start-maximized")
+    chrome_options.add_argument("disable-infobars")
+    selenium_grid_url = "http://66.228.58.4:4444/wd/hub"
+    driver = webdriver.Remote(command_executor=selenium_grid_url, options=chrome_options)
+    logger.info("WebDriver initialized.")
+    return driver
+
+def get_screenshot_and_html(driver, file_path):
+    driver.get_screenshot_as_file(file_path)
+    html_content = driver.page_source
+    html_file_path = file_path.replace(screenshots_directory, pages_directory).replace('.png', '.html')
+    with open(html_file_path, 'w', encoding='utf-8') as file:
+        file.write(html_content)
+    logger.info(f"Screenshot and HTML source saved for {file_path}")
 
 def login_to_linkedin(driver, username, password):
     url_to_sign_in_page = 'https://www.linkedin.com/login'
