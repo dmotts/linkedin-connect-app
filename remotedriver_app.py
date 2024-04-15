@@ -1,3 +1,5 @@
+import sys
+from twocaptcha import TwoCaptcha
 import streamlit as st
 import requests
 from selenium import webdriver
@@ -112,6 +114,22 @@ def bypass_captcha(driver):
         driver.get_screenshot_as_file(f'{screenshots_directory}/captcha_detected.png')
         page_url = driver.current_url
 
+api_key = os.getenv("TWOCAPTCHA_API_KEY")  
+
+solver = TwoCaptcha(api_key)
+
+try:
+    result = solver.funcaptcha(
+        sitekey='3117BF26-4762-4F5A-8ED9-A85E69209A46',  # Replace with the actual site key for the CAPTCHA
+        url='https://www.example.com',  # URL where the CAPTCHA is located
+        surl='https://client-api.arkoselabs.com'  # Server URL of the CAPTCHA service
+    )
+except Exception as e:
+    sys.exit(e)
+else:
+    sys.exit('result: ' + str(result))
+
+ '''
         # Sending CAPTCHA to 2Captcha
         api_key = os.getenv("TWOCAPTCHA_API_KEY")
         captcha_id = requests.post("http://2captcha.com/in.php", data={
@@ -129,7 +147,7 @@ def bypass_captcha(driver):
                 recaptcha_answer = response.json()['request']
                 break
             time.sleep(5)
-
+'''
         # Input the solved CAPTCHA
         driver.execute_script(f'document.getElementById("g-recaptcha-response").innerHTML="{recaptcha_answer}";')
         driver.switch_to.default_content()
