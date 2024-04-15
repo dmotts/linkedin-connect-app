@@ -101,7 +101,6 @@ def get_screenshot(driver, file_path):
 def bypass_captcha(driver):
     logger.info("Checking for CAPTCHA...")
     try:
-        # Often CAPTCHA is loaded within an iframe, adjust the selector as needed
         iframe = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "iframe")))
         driver.switch_to.frame(iframe)
@@ -114,20 +113,20 @@ def bypass_captcha(driver):
         driver.get_screenshot_as_file(f'{screenshots_directory}/captcha_detected.png')
         page_url = driver.current_url
 
-api_key = os.getenv("TWOCAPTCHA_API_KEY")  
+        api_key = os.getenv("TWOCAPTCHA_API_KEY")  
 
-solver = TwoCaptcha(api_key)
+        solver = TwoCaptcha(api_key)
 
-try:
-    result = solver.funcaptcha(
-        sitekey='3117BF26-4762-4F5A-8ED9-A85E69209A46',  # Replace with the actual site key for the CAPTCHA
-        url='https://www.example.com',  # URL where the CAPTCHA is located
-        surl='https://client-api.arkoselabs.com'  # Server URL of the CAPTCHA service
+        try:
+            result = solver.funcaptcha(
+            sitekey='3117BF26-4762-4F5A-8ED9-A85E69209A46',  # Replace with the actual site key for the CAPTCHA
+                        url='https://www.example.com',  # URL where the CAPTCHA is located
+            surl='https://client-api.arkoselabs.com'  # Server URL of the CAPTCHA service
     )
-except Exception as e:
-    sys.exit(e)
-else:
-    sys.exit('result: ' + str(result))
+        except Exception as e:
+            sys.exit(e)
+        else:
+            sys.exit('result: ' + str(result))
 
  '''
         # Sending CAPTCHA to 2Captcha
