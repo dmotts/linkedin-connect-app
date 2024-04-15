@@ -1,4 +1,5 @@
 import streamlit as st
+import requests
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.chrome.options import Options
@@ -96,18 +97,54 @@ def get_screenshot(driver, file_path):
     logger.info(f"Screenshot and HTML source saved for {file_path}")
 
 def bypass_captcha(driver):
-    # Find the button by its text and click it
-    logger.info("Bypassing captcha...")
-    driver.get_screenshot_as_file(f'{screenshots_directory}/captcha_page.png')
+    logger.info("Checking for CAPTCHA...")
     try:
-        verify_button = driver.find_element(By.XPATH, "//button[text()='Verify']")
+        # Often CAPTCHA is loaded within an iframe, adjust the selector as needed
+        iframe = WebDriverWait(driver, 10).until(
+            EC.presence_of_element_located((By.TAG_NAME, "iframe")))
+        driver.switch_to.frame(iframe)
+
+        site_key = driver.find_element(By.CLASS_NAME, 'g-recaptcha').get_attribute('data-sitekey')
+        if not site_key:
+            logger.info("No CAPTCHA found, proceeding...")
+            return True
+
+        driver.get_screenshot_as_file(f'{screenshots_directory}/captcha_detected.png')
+        page_url = driver.current_url
+
+        # Sending CAPTCHA to 2Captcha
+        api_key = os.getenv("TWOCAPTCHA_API_KEY")
+        captcha_id = requests.post("http://2captcha.com/in.php", data={
+            "key": api_key,
+            "method": "userrecaptcha",
+            "googlekey": site_key,
+            "pageurl": page_url,
+            "json": 1
+        }).json().get('request')
+
+        # Retrive the solved CAPTCHA
+        for i in range(1, 10):  # Retry loop
+            response = requests.get(f"http://2captcha.com/res.php?key={api_key}&action=get&id={captcha_id}&json=1")
+            if response.json()['status'] == 1:
+                recaptcha_answer = response.json()['request']
+                break
+            time.sleep(5)
+
+        # Input the solved CAPTCHA
+        driver.execute_script(f'document.getElementById("g-recaptcha-response").innerHTML="{recaptcha_answer}";')
+        driver.switch_to.default_content()
+
+        verify_button = WebDriverWait(driver, 10).until(
+            EC.element_to_be_clickable((By.ID, "verify")))
         verify_button.click()
-        logger.info("Button clicked successfully!")
+        logger.info("CAPTCHA solved and verified!")
         return True
+    except TimeoutException:
+        logger.error("Timeout while handling CAPTCHA.")
+        return False
     except Exception as e:
-        logger.error(f"Error clicking the button: {e}")
-
-
+        logger.error(f"Error handling CAPTCHA: {e}")
+        return False
 
 def send_connection_requests(driver, keywords, max_connect):
     i, page_number = 0, 1
