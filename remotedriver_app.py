@@ -15,7 +15,7 @@ from datetime import datetime
 import os
 from dotenv import load_dotenv
 
-# Load environment variables from .env file
+# Load EnvironmentError nt variables from .env file
 load_dotenv()
 
 # Ensure directories for logs, screenshots, and HTML pages
@@ -147,7 +147,12 @@ def get_screenshot(driver, file_path):
         file.write(html_content)
     logger.info(f"Screenshot and HTML source saved for {file_path}")
 
-         keyword_query = "%20".join(keywords)
+
+def send_connection_requests(driver, keywords, max_connect):
+    i, page_number = 0, 1
+    while i < max_connect:
+        try:
+            keyword_query = "%20".join(keywords)
             url_link = f"https://www.linkedin.com/search/results/people/?keywords={keyword_query}&page={page_number}"
             driver.get(url_link)
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "button")))
