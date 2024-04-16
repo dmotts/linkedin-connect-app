@@ -90,22 +90,19 @@ def login_to_linkedin(driver, username, password):
     get_screenshot(driver, f'{screenshots_directory}/after_successful_login.png')  # Updated function call
     return True
 
-def get_screenshot(driver, file_path):
-    driver.get_screenshot_as_file(file_path)
-    html_content = driver.page_source
-    html_file_path = file_path.replace(screenshots_directory, pages_directory).replace('.png', '.html')
-    with open(html_file_path, 'w', encoding='utf-8') as file:
-        file.write(html_content)
-    logger.info(f"Screenshot and HTML source saved for {file_path}")
+# Configure logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
 
-def bypass_captcha(driver):
+def bypass_captcha(driver, screenshots_directory):
     logger.info("Checking for CAPTCHA...")
     try:
         iframe = WebDriverWait(driver, 10).until(
             EC.presence_of_element_located((By.TAG_NAME, "iframe")))
         driver.switch_to.frame(iframe)
 
-        site_key = driver.find_element(By.CLASS_NAME, 'g-recaptcha').get_attribute('data-sitekey')
+        captcha_element = driver.find_element(By.CLASS_NAME, 'g-recaptcha')
+        site_key = captcha_element.get_attribute('data-sitekey')
         if not site_key:
             logger.info("No CAPTCHA found, proceeding...")
             return True
@@ -113,41 +110,20 @@ def bypass_captcha(driver):
         driver.get_screenshot_as_file(f'{screenshots_directory}/captcha_detected.png')
         page_url = driver.current_url
 
-        api_key = os.getenv("TWOCAPTCHA_API_KEY")  
-
+        api_key = os.getenv("TWOCAPTCHA_API_KEY")
         solver = TwoCaptcha(api_key)
 
         try:
             result = solver.funcaptcha(
-            sitekey='3117BF26-4762-4F5A-8ED9-A85E69209A46',  # Replace with the actual site key for the CAPTCHA
-                        url='https://www.example.com',  # URL where the CAPTCHA is located
-            surl='https://client-api.arkoselabs.com'  # Server URL of the CAPTCHA service
-    )
+                sitekey=site_key,
+                url=page_url,
+                surl='https://client-api.arkoselabs.com'  # Assuming the surl is consistent
+            )
+            recaptcha_answer = result['code']  # Assuming the result dict contains the 'code' key with the CAPTCHA solution
         except Exception as e:
-            sys.exit(e)
-        else:
-            sys.exit('result: ' + str(result))
+            logger.error(f"CAPTCHA solving failed: {e}")
+            return False
 
- '''
-        # Sending CAPTCHA to 2Captcha
-        api_key = os.getenv("TWOCAPTCHA_API_KEY")
-        captcha_id = requests.post("http://2captcha.com/in.php", data={
-            "key": api_key,
-            "method": "userrecaptcha",
-            "googlekey": site_key,
-            "pageurl": page_url,
-            "json": 1
-        }).json().get('request')
-
-        # Retrive the solved CAPTCHA
-        for i in range(1, 10):  # Retry loop
-            response = requests.get(f"http://2captcha.com/res.php?key={api_key}&action=get&id={captcha_id}&json=1")
-            if response.json()['status'] == 1:
-                recaptcha_answer = response.json()['request']
-                break
-            time.sleep(5)
-'''
-        # Input the solved CAPTCHA
         driver.execute_script(f'document.getElementById("g-recaptcha-response").innerHTML="{recaptcha_answer}";')
         driver.switch_to.default_content()
 
@@ -156,18 +132,22 @@ def bypass_captcha(driver):
         verify_button.click()
         logger.info("CAPTCHA solved and verified!")
         return True
+
     except TimeoutException:
         logger.error("Timeout while handling CAPTCHA.")
         return False
     except Exception as e:
         logger.error(f"Error handling CAPTCHA: {e}")
         return False
+def get_screenshot(driver, file_path):
+    driver.get_screenshot_as_file(file_path)
+    html_content = driver.page_source
+    html_file_path = file_path.replace(screenshots_directory, pages_directory).replace('.png', '.html')
+    with open(html_file_path, 'w', encoding='utf-8') as file:
+        file.write(html_content)
+    logger.info(f"Screenshot and HTML source saved for {file_path}")
 
-def send_connection_requests(driver, keywords, max_connect):
-    i, page_number = 0, 1
-    while i < max_connect:
-        try:
-            keyword_query = "%20".join(keywords)
+         keyword_query = "%20".join(keywords)
             url_link = f"https://www.linkedin.com/search/results/people/?keywords={keyword_query}&page={page_number}"
             driver.get(url_link)
             WebDriverWait(driver, 10).until(EC.presence_of_element_located((By.TAG_NAME, "button")))

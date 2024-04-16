@@ -1545,6 +1545,19 @@ trio = ">=0.11"
 wsproto = ">=0.14"
 
 [[package]]
+name = "twocaptcha"
+version = "0.0.1"
+description = "2Captcha Python3 API Wrapper"
+optional = false
+python-versions = "*"
+files = [
+    {file = "TwoCaptcha-0.0.1.tar.gz", hash = "sha256:fd04127de71ca4bd31c22add84a5bcb7c683cf9ee5bf503ca14a8f372ac76a0e"},
+]
+
+[package.dependencies]
+requests = "*"
+
+[[package]]
 name = "typing-extensions"
 version = "4.10.0"
 description = "Backported and Experimental Type Hints for Python 3.8+"
@@ -1644,4 +1657,4 @@ h11 = ">=0.9.0,<1"
 [metadata]
 lock-version = "2.0"
 python-versions = "^3.10"
-content-hash = "7f2ed58b10bdd6a4cc9f63f5b02fa7fe318e7c440ca673dbea399311ccae8dd5"
+content-hash = "855113dc4d4a9b7112343bf7d3c1488d719cb8b33df73c85e85edf22a73ff9aa"
