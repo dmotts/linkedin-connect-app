@@ -13,6 +13,7 @@ import time
 import logging
 from datetime import datetime
 import os
+from bs4 import BeautifulSoup
 from dotenv import load_dotenv
 
 # Load EnvironmentError nt variables from .env file
@@ -93,6 +94,45 @@ def login_to_linkedin(driver, username, password):
 # Configure logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+def scrape_captcha_data(url):
+    # Start a session to keep cookies and set a common user-agent
+    session = requests.Session()
+    session.headers.update({
+        'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/58.0.3029.110 Safari/537.36'
+    })
+
+    try:
+        # Make a GET request to fetch the page content
+        response = session.get(url)
+        response.raise_for_status()  # Raise an error if the request failed
+
+        # Parse the page content with BeautifulSoup
+        soup = BeautifulSoup(response.text, 'html.parser')
+
+        # Scrape the CSRF token, challenge ID, and site key
+        csrf_token = soup.find('input', {'name': 'csrfToken'}).get('value', None)
+        challenge_id = soup.find('input', {'name': 'challengeId'}).get('value', None)
+        site_key = soup.find('input', {'name': 'captchaSiteKey'}).get('value', None)
+
+        # Check if all necessary elements were found
+        if not all([csrf_token, challenge_id, site_key]):
+            logger.error('One or more necessary inputs were not found on the page.')
+            return {'error': 'Failed to retrieve all necessary CAPTCHA data.'}
+
+        # Return the scraped data as a dictionary
+        return {
+            'csrf_token': csrf_token,
+            'challenge_id': challenge_id,
+            'site_key': site_key
+        }
+
+    except requests.RequestException as e:
+        logger.error(f'HTTP request failed: {e}')
+        return {'error': f'HTTP request failed: {e}'}
+    except Exception as e:
+        logger.error(f'An error occurred: {e}')
+        return {'error': f'An error occurred: {e}'}
 
 def bypass_captcha(driver, screenshots_directory):
     logger.info("Checking for CAPTCHA...")
