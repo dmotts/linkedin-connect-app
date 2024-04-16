@@ -90,11 +90,6 @@ def login_to_linkedin(driver, username, password):
     time.sleep(15)
     get_screenshot(driver, f'{screenshots_directory}/after_successful_login.png')  # Updated function call
     return True
-
-# Configure logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
 def scrape_captcha_data(url):
     # Start a session to keep cookies and set a common user-agent
     session = requests.Session()
@@ -134,7 +129,7 @@ def scrape_captcha_data(url):
         logger.error(f'An error occurred: {e}')
         return {'error': f'An error occurred: {e}'}
 
-def bypass_captcha(driver, screenshots_directory):
+def bypass_captcha(driver):
     logger.info("Checking for CAPTCHA...")
     try:
         iframe = WebDriverWait(driver, 10).until(
@@ -186,7 +181,6 @@ def get_screenshot(driver, file_path):
     with open(html_file_path, 'w', encoding='utf-8') as file:
         file.write(html_content)
     logger.info(f"Screenshot and HTML source saved for {file_path}")
-
 
 def send_connection_requests(driver, keywords, max_connect):
     i, page_number = 0, 1
